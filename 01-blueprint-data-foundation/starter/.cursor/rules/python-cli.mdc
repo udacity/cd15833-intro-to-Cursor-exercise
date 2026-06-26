@@ -1,0 +1,37 @@
+---
+description: Engineering constraints for the Personal Expense Tracker CLI
+globs:
+  - "expense_tracker/**/*.py"
+  - "tests/**/*.py"
+alwaysApply: true
+---
+
+# Personal Expense Tracker CLI — project rules
+
+These rules pin the project's engineering constraints so generated code stays in-scope and the diff
+surface stays small. They make context-scoping reproducible (a standing rule) rather than relying only
+on manual `@`-mentions per prompt.
+
+## Runtime & dependencies
+- Standard library only at **runtime**. Do not add third-party runtime dependencies to `pyproject.toml`.
+- `pytest`, `mypy`, and `ruff` are dev-only dependencies.
+- Target Python ≥ 3.11. Use `from __future__ import annotations` at the top of every module.
+
+## Money & dates
+- Represent money with `decimal.Decimal`, never `float`. Serialize amounts as **strings** in JSON.
+- Render money with exactly two decimal places (`f"{value:.2f}"`).
+- Dates are `datetime.date`, serialized as ISO `YYYY-MM-DD`. Months are `YYYY-MM` strings.
+
+## CLI & errors
+- One `argparse` parser with `add` / `list` / `summary` subcommands; entry point is
+  `expense_tracker.__main__:main` returning an `int` exit code.
+- Validate user input before persisting. Invalid input prints a clear message to **stderr**, returns a
+  non-zero exit code, and writes nothing.
+- Wrap only system boundaries (user input, file I/O) in `try/except`. Surface store problems as
+  `StoreError`. No defensive `try/except` around internal calls.
+
+## Quality gates (must stay green)
+- `mypy --strict` clean — full type hints, no `# type: ignore`.
+- `ruff check` clean (E, F, I, B, UP, RUF) — no `# noqa` unless justified inline.
+- Every acceptance criterion has a behavior-focused test; tests use `tmp_path`, not real user files.
+- No TODO/FIXME comments and no teaching comments in delivered code.
